@@ -1,11 +1,11 @@
 # This script sorts both .nef (raw) photos and .jpg photos from a source folder and into a destination folder. 
-# It works by importing a .csv with the full names of the files (without filetypes) that should be kept.
+# It works by importing a .csv with the numbers of the filenames (without filetypes) that should be kept.
 # For example:
 # 
-# name
-# DSC_4020
-# DSC_4028
-# DSC_4039
+# Name
+# 4020
+# 4028
+# 4039
 # 
 # And so forth
 
@@ -18,10 +18,13 @@ $destinationPath = ""
 # Set to the path with the .csv with the file names to keep.
 $keptFileNames = Import-Csv ""
 
+# Filename prefix - change if applicable. 
+$prefix = ""
+
 Set-Location $sourcePath
 
 foreach ($file in $keptFileNames) {
-    $fileName = $file.name  # Assuming the CSV has a column named 'Name'
+    $fileName = $prefix + $($file.Name)  # Assuming the CSV has a column named 'Name'
     
     # Move .jpg files
     $jpgFile = Get-ChildItem -Path $sourcePath -Filter "$fileName.jpg" -ErrorAction SilentlyContinue
