@@ -1,46 +1,79 @@
-# This script sorts both .nef (raw) photos and .jpg photos from a source folder and into a destination folder. 
-# It works by importing a .csv with the numbers of the filenames (without filetypes) that should be kept.
-# For example:
-# 
-# Name
-# 4020
-# 4028
-# 4039
-# 
-# And so forth
+<#
+ * Project Name : Photo Sorter
+ * File Name    : PhotoSorter.ps1
+ * Author       : Sydnie Barnes
+ * Created Date : 2025-11-07
+ * Last Updated : 2025-12-01
+ * Version      : v1.1.0
+ * Description  : This script sorts both .nef (raw) photos and .jpg photos from a source folder and into a destination folder.
+ *                It operates on the assumption that the files have a shared prefix $prefix and sequential number filenames.
+ *                Simply type the numbers of the file names and it will append the prefix and move the files to a destination.
+ *                E.g. Type 5069 to retreive DSC_5069.jpg and DSC_5069.nef.
+ * Dependencies : N/A
+ * Notes        : [2025-12-01] Adjusted from a csv input to array input loop for ease of just keeping things in 1 program.
+ *                Also converted to a function for ease of use.
+#>
 
-# Set to the source path for the photos
-$sourcePath = "" 
+# Define function
+function Move-Photos {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$SourceDirectory,
 
-# Set the destination path for the kept photos
-$destinationPath = "" 
+        [Parameter(Mandatory = $true)]
+        [string]$DestinationDirectory,
 
-# Set to the path with the .csv with the file names to keep.
-$keptFileNames = Import-Csv ""
+        [Parameter(Mandatory = $true)]
+        [string]$FileNamePrefix,
 
-# Filename prefix - change if applicable. 
-$prefix = ""
+        [string[]]$Files
+    )
 
-Set-Location $sourcePath
+    # Store kept file names
+    $keptFileNames = @()
 
-foreach ($file in $keptFileNames) {
-    $fileName = $prefix + $($file.Name)  # Assuming the CSV has a column named 'Name'
-    
-    # Move .jpg files
-    $jpgFile = Get-ChildItem -Path $sourcePath -Filter "$fileName.jpg" -ErrorAction SilentlyContinue
-    if ($jpgFile) {
-        Move-Item -Path $jpgFile.FullName -Destination $destinationPath
-        Write-Host "$fileName.jpg has been moved" -ForegroundColor Green
-    } else {
-        Write-Host "$fileName.jpg not found" -ForegroundColor Red
+    # Filename prefix - change if applicable. 
+    $prefix = $FileNamePrefix
+
+    # Change location to source path
+    Set-Location $SourceDirectory
+
+    # Add files if they were defined, otherwise ask for them. 
+    if ($Files) {
+        $keptFileNames = $Files
     }
-    
-    # Move .nef files
-    $nefFile = Get-ChildItem -Path $sourcePath -Filter "$fileName.nef" -ErrorAction SilentlyContinue
-    if ($nefFile) {
-       Move-Item -Path $nefFile.FullName -Destination $destinationPath
-        Write-Host "$fileName.nef has been moved" -ForegroundColor Yellow
-    } else {
-        Write-Host "$fileName.nef not found" -ForegroundColor Red
+    else {
+        do {
+            # Enter files to keep, press 'q' to quit
+            $fileToKeep = Read-Host "Enter the number to add to kept items array or press 'q' to quit"
+            if ($fileToKeep -ne "q") {
+                $keptFileNames += $fileToKeep
+                Write-Host "Added $fileToKeep to kept items."
+                Write-Host "Current Kept items -`n$keptFileNames"
+            }
+        } until ($fileToKeep -eq "q")
+
     }
+
+    # Move files
+    Write-Host "Moving files...`n" -ForegroundColor Yellow
+    foreach ($fileNumber in $keptFileNames) {
+        $fileName = $prefix + $fileNumber
+
+        # Get all files matching the file name and move them
+        $matches = Get-ChildItem -Path $SourceDirectory -Filter "*$fileName*" -ErrorAction SilentlyContinue
+
+        if ($matches) {
+            foreach ($match in $matches) {
+                Move-Item -Path $match.FullName -Destination $DestinationDirectory
+                Write-Host "$($match.Name) moved" -ForegroundColor Green
+            }
+        }
+        else {
+            Write-Host "$fileName not found" -ForegroundColor Red
+        }
+
+    }
+    Write-Host "`nAll requested files moved from $SourceDirectory to $DestinationDirectory" -ForegroundColor Cyan
 }
+
