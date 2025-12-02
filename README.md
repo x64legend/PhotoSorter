@@ -2,7 +2,7 @@
 
 **File Name:** `PhotoSorter.ps1`  
 **Author:** Sydnie Barnes  
-**Created Date:** 2025-11-07  
+**Created Date:** 2024-10-06
 **Last Updated:** 2025-12-01  
 **Version:** v1.1.0  
 
